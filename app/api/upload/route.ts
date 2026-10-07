@@ -10,24 +10,20 @@ export async function POST(request: Request): Promise<NextResponse> {
     const jsonResponse = await handleUpload({
       body,
       request,
-      onBeforeGenerateToken: async () => {
-        return {
-          allowedContentTypes: [
-            'image/jpeg',
-            'image/png',
-            'image/webp',
-            'image/gif',
-            'image/svg+xml',
-            'image/avif',
-            'image/x-icon',
-            'image/vnd.microsoft.icon',
-          ],
-          addRandomSuffix: true,
-          allowOverwrite: true,
-          maximumSizeInBytes: 20 * 1024 * 1024, // 20 MB for images
-        };
-      },
-      onUploadCompleted: async () => {},
+      onBeforeGenerateToken: async () => ({
+        allowedContentTypes: [
+          'image/jpeg',
+          'image/png',
+          'image/webp',
+          'image/gif',
+          'image/svg+xml',
+          'image/avif',
+          'image/x-icon',
+          'image/vnd.microsoft.icon',
+        ],
+        addRandomSuffix: true, // ← ensures unique filename every time
+        maximumSizeInBytes: 20 * 1024 * 1024,
+      }),
     });
 
     return NextResponse.json(jsonResponse);

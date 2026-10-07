@@ -10,26 +10,22 @@ export async function POST(request: Request): Promise<NextResponse> {
     const jsonResponse = await handleUpload({
       body,
       request,
-      onBeforeGenerateToken: async () => {
-        return {
-          allowedContentTypes: [
-            'application/pdf',
-            'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'application/vnd.ms-excel',
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'application/vnd.ms-powerpoint',
-            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-            'text/plain',
-            'text/csv',
-            'application/zip',
-          ],
-          addRandomSuffix: true,
-          allowOverwrite: true,
-          maximumSizeInBytes: 500 * 1024 * 1024,
-        };
-      },
-      onUploadCompleted: async () => {},
+      onBeforeGenerateToken: async () => ({
+        allowedContentTypes: [
+          'application/pdf',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'application/vnd.ms-excel',
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'application/vnd.ms-powerpoint',
+          'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+          'text/plain',
+          'text/csv',
+          'application/zip',
+        ],
+        addRandomSuffix: true, // ← ensures unique filename every time
+        maximumSizeInBytes: 500 * 1024 * 1024,
+      }),
     });
 
     return NextResponse.json(jsonResponse);
