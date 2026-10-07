@@ -1,0 +1,51 @@
+# ═══════════════════════════════════════════════════
+#  MSA — Git ignore rules
+# ═══════════════════════════════════════════════════
+
+# ── Environment variables (NEVER commit) ──
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# ── Dependencies ──
+node_modules/
+.pnp
+.pnp.js
+.yarn/
+
+# ── Next.js build output ──
+.next/
+out/
+build/
+dist/
+
+# ── Production ──
+.vercel
+*.tsbuildinfo
+next-env.d.ts
+
+# ── Misc ──
+.DS_Store
+Thumbs.db
+*.pem
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── IDE / editor ──
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Uploaded files (local-only; on Vercel these go to Blob) ──
+public/uploads/
+
+# ── Temp scripts ──
+reset-auth.js
+check-auth.js
+check-news.js
