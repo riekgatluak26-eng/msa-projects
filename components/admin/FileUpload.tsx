@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
+import { upload } from '@vercel/blob/client';
 
 interface FileUploadProps {
   label: string;
@@ -8,6 +9,10 @@ interface FileUploadProps {
   onChange: (url: string) => void;
   help?: string;
   accept?: string;
+  /** Route that generates the upload token */
+  endpoint?: string;
+  /** Max file size in bytes (default: 20 MB) */
+  maxSize?: number;
 }
 
 export default function FileUpload({
@@ -16,6 +21,8 @@ export default function FileUpload({
   onChange,
   help,
   accept = 'image/*',
+  endpoint = '/api/upload',
+  maxSize = 20 * 1024 * 1024,
 }: FileUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -23,69 +30,51 @@ export default function FileUpload({
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const upload = useCallback(
+  const uploadFile = useCallback(
     async (file: File) => {
       setError('');
       setUploading(true);
       setProgress(0);
 
       try {
-        const formData = new FormData();
-        formData.append('file', file);
-
-        const url = await new Promise<string>((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-
-          xhr.upload.onprogress = (e) => {
-            if (e.lengthComputable) {
-              setProgress(Math.round((e.loaded / e.total) * 100));
+        const blob = await upload(file.name, file, {
+          access: 'public',
+          handleUploadUrl: endpoint,
+          onUploadProgress: (event) => {
+            if (event.total) {
+              setProgress(Math.round((event.loaded / event.total) * 100));
             }
-          };
-
-          xhr.onload = () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              try {
-                const res = JSON.parse(xhr.responseText);
-                if (res.url) resolve(res.url);
-                else reject(new Error('No URL in response'));
-              } catch {
-                reject(new Error('Invalid server response'));
-              }
-            } else {
-              try {
-                const res = JSON.parse(xhr.responseText);
-                reject(new Error(res.error || `Upload failed (${xhr.status})`));
-              } catch {
-                reject(new Error(`Upload failed (${xhr.status})`));
-              }
-            }
-          };
-
-          xhr.onerror = () => reject(new Error('Network error — check your connection'));
-          xhr.open('POST', '/api/upload');
-          xhr.send(formData);
+          },
         });
 
-        onChange(url);
         setProgress(100);
-        setTimeout(() => setProgress(0), 1200);
+        onChange(blob.url);
+        setTimeout(() => setProgress(0), 800);
       } catch (err: any) {
-        setError(err.message || 'Upload failed');
+        console.error('Upload error:', err);
+        const msg = err?.message || 'Upload failed';
+        if (msg.toLowerCase().includes('too large')) {
+          setError(`File is too large. Maximum ${Math.round(maxSize / 1024 / 1024)}MB.`);
+        } else if (msg.toLowerCase().includes('content type')) {
+          setError('File type not allowed.');
+        } else {
+          setError(msg);
+        }
         setProgress(0);
       } finally {
         setUploading(false);
       }
     },
-    [onChange]
+    [endpoint, onChange, maxSize]
   );
 
   const handleFile = (file?: File | null) => {
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
-      setError('File is too large. Maximum size is 10MB.');
+    if (file.size > maxSize) {
+      setError(`File is too large. Maximum ${Math.round(maxSize / 1024 / 1024)}MB.`);
       return;
     }
-    upload(file);
+    uploadFile(file);
   };
 
   const isImage = accept.includes('image') && value && !uploading;
@@ -129,6 +118,7 @@ export default function FileUpload({
       >
         {isImage ? (
           <div className="relative h-44 group">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={value} alt="preview" className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
               <span className="text-white font-semibold text-sm bg-black/70 px-4 py-2 rounded-lg">
@@ -157,8 +147,12 @@ export default function FileUpload({
             <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-green-100 flex items-center justify-center">
               <i className="fas fa-cloud-upload-alt text-green-600 text-xl" />
             </div>
-            <p className="text-sm font-bold text-gray-700">Click to upload or drag & drop</p>
-            <p className="text-xs text-gray-500 mt-1">{help || 'PNG, JPG, SVG — up to 10MB'}</p>
+            <p className="text-sm font-bold text-gray-700">
+              Click to upload or drag & drop
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              {help || 'PNG, JPG, SVG — up to 20MB'}
+            </p>
           </div>
         )}
 
@@ -170,7 +164,9 @@ export default function FileUpload({
                   <i className="fas fa-cloud-upload-alt text-green-600" />
                   Uploading...
                 </span>
-                <span className="text-xs font-bold text-green-600 tabular-nums">{progress}%</span>
+                <span className="text-xs font-bold text-green-600 tabular-nums">
+                  {progress}%
+                </span>
               </div>
               <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
                 <div
@@ -182,7 +178,7 @@ export default function FileUpload({
                 />
               </div>
               <p className="text-[11px] text-gray-500 mt-2 text-center">
-                Please don't close this page
+                Please don&apos;t close this page
               </p>
             </div>
           </div>
