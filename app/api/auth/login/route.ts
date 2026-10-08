@@ -8,8 +8,8 @@ import {
   getClientIp,
 } from '@/lib/rateLimit';
 
-const FALLBACK_USERNAME = 'sustainable';
-const FALLBACK_PASSWORD = 'Mision2000';
+const FALLBACK_USERNAME = process.env.ADMIN_USERNAME || '';
+const FALLBACK_PASSWORD = process.env.ADMIN_PASSWORD || '';
 
 function hashPassword(password: string): string {
   return crypto.createHash('sha256').update(password).digest('hex');
