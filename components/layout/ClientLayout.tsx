@@ -39,6 +39,7 @@ export default function ClientLayout({
   const router = useRouter();
   const isAdmin = pathname.startsWith('/admin');
   const isLoginPage = pathname === '/admin';
+  const isPausedPage = pathname === '/paused'; // 👈 Added check for paused page
 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
@@ -63,10 +64,13 @@ export default function ClientLayout({
     router.replace('/admin');
   };
 
-  /* ── Login page: render as-is (no chrome) ─────────────── */
+  /* ── 1. Paused Page: render ONLY the page (no Header/Footer) ── */
+  if (isPausedPage) return <>{children}</>;
+
+  /* ── 2. Login page: render as-is (no chrome) ──────────── */
   if (isLoginPage) return <>{children}</>;
 
-  /* ── Public site: Header + main + Footer ──────────────── */
+  /* ── 3. Public site: Header + main + Footer ───────────── */
   if (!isAdmin) {
     return (
       <>
@@ -77,7 +81,7 @@ export default function ClientLayout({
     );
   }
 
-  /* ── Admin: waiting for auth check ────────────────────── */
+  /* ── 4. Admin: waiting for auth check ─────────────────── */
   if (isAuthenticated === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -89,7 +93,7 @@ export default function ClientLayout({
     );
   }
 
-  /* ── Admin: not authenticated (redirect is in progress) ─ */
+  /* ── 5. Admin: not authenticated (redirect is in progress) ─ */
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -101,7 +105,7 @@ export default function ClientLayout({
     );
   }
 
-  /* ── Admin: authenticated → sidebar layout ────────────── */
+  /* ── 6. Admin: authenticated → sidebar layout ─────────── */
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* ═══ Sidebar ═══ */}
